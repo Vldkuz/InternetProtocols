@@ -14,13 +14,16 @@ def main():
     table = prettytable.PrettyTable()
     table.field_names = ['IP', 'AS', 'Country', 'Description']
 
-    trace = Trace(args.dst_ip).trace()
-    whois = Whois().get_info_list_ip(trace)
+    try:
+        trace = Trace(args.dst_ip).trace()
+        whois = Whois().get_info_list_ip(trace)
 
-    for ip, descr in whois.items():
-        table.add_row([ip, descr['AS'], descr['Country'], descr['Description']])
+        for ip, descr in whois.items():
+            table.add_row([ip, descr['AS'], descr['Country'], descr['Description']])
 
-    print(table)
+        print(table)
+    except Exception as e:
+        print(f"Ошибка с сетью: {e}")
 
 
 if __name__ == "__main__":
