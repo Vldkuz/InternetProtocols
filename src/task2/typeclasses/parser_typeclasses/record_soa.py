@@ -1,4 +1,4 @@
-from utils import parse_names
+from utils.utils import parse_names
 
 SERIAL_NUMBER_OFFSET = 32
 REFRESH_INTERVAL_OFFSET = 32
@@ -54,4 +54,3 @@ class RecordTypeSoa:
     @property
     def minimum_ttl(self):
         return self._minimum_ttl
-

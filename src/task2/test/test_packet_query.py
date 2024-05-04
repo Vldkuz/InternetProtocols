@@ -1,11 +1,11 @@
 import unittest
 
-from dns_packets.dns_packet_parser import DNSPacketParser
+from src.task2.dns_packets.dns_packet_parser import DNSParser
 
 
 class TestQuery(unittest.TestCase):
     bytes_stream = b'79080100000100000000000006676f6f676c6503636f6d0000010001'
-    parsed_packet = DNSPacketParser(bytes_stream)
+    parsed_packet = DNSParser(bytes_stream)
 
     def test_id(self):
         self.assertEqual(self.parsed_packet.id, 30984)

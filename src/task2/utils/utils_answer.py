@@ -1,12 +1,12 @@
-from record_a import RecordTypeA
-from record_aaaa import RecordTypeAAAA
-from record_answer import Answer
-from record_cname import RecordTypeCNAME
-from record_mx import RecordTypeMX
-from record_ns import RecordTypeNS
-from record_ptr import RecordTypePTR
-from record_soa import RecordTypeSoa
-from utils import parse_query, SEEK, TTL_OFFSET, RD_LENGTH_OFFSET, TYPE_RECORD, QNAME, CLASS_RECORD
+from typeclasses.parser_typeclasses.record_a import RecordTypeA
+from typeclasses.parser_typeclasses.record_aaaa import RecordTypeAAAA
+from typeclasses.parser_typeclasses.record_answer import Answer
+from typeclasses.parser_typeclasses.record_cname import RecordTypeCNAME
+from typeclasses.parser_typeclasses.record_mx import RecordTypeMX
+from typeclasses.parser_typeclasses.record_ns import RecordTypeNS
+from typeclasses.parser_typeclasses.record_ptr import RecordTypePTR
+from typeclasses.parser_typeclasses.record_soa import RecordTypeSoa
+from utils.utils import parse_query, SEEK, TTL_OFFSET, RD_LENGTH_OFFSET, TYPE_RECORD, QNAME, CLASS_RECORD
 
 
 def parse_answer(bits_stream: str, carrier: list, carrier_limit: int, init_seek: int) -> tuple[list, int]:

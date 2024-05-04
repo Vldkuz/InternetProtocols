@@ -1,70 +1,94 @@
+import binascii
 import logging
 import os
 import socket
-import binascii
+import sys
 from socket import SocketKind
 from dotenv import load_dotenv
 from cache import Cache
-from dns_packets.dns_packet_parser import DNSPacketParser
+from dns_packets.config_dns import DNSConfig
+from dns_packets.dns_packet_creator import DNSCreator
+from dns_packets.dns_packet_parser import DNSParser
+from typeclasses.creator_typeclasses.record_answer import Answer
+from utils.utils_dns_config import to_creator
+from utils.utils_server import resolve_name
 
 TRANSPORT_PROTO_MAPPER = {'UDP': socket.SOCK_DGRAM, 'TCP': socket.SOCK_STREAM}
+
 LOG_LEVEL_MAPPER = {'INFO': logging.INFO, 'DEBUG': logging.DEBUG, 'WARNING': logging.WARNING, 'ERROR': logging.ERROR,
                     'CRITICAL': logging.CRITICAL}
 load_dotenv()
 
 PORT = os.getenv('PORT') or 53
-TRANSPORT: SocketKind | None = TRANSPORT_PROTO_MAPPER.get(os.getenv('TRANSPORT_PROTO')) or socket.SOCK_DGRAM
+
+TRANSPORT: SocketKind = TRANSPORT_PROTO_MAPPER.get(os.getenv('TRANSPORT_PROTO')) or socket.SOCK_DGRAM
+
 LOG_LEVEL = os.getenv('LOG_LEVEL') or logging.INFO
+
 CACHE_FILE_SERIALIZE = os.getenv('CACHE_FILE') or 'cache.json'
+
+IP_SERVER = os.getenv('IP_SERVER') or '127.0.0.1'
+
+ROOT_DNS = os.getenv('ROOT_DNS') or '8.8.8.8'
 
 logging.basicConfig(level=LOG_LEVEL, filename='server.log', filemode='a')
 
-logging.info(
-    f"Server starting logging. Initial parameters PORT: {PORT}, TRANSPORT_PROTOCOL: {TRANSPORT}, LOG_LEVEL: {LOG_LEVEL}")
+logging.info(f"Starting logging. PORT: {PORT}, TRANSPORT_PROTOCOL: {TRANSPORT}, LOG_LEVEL: {LOG_LEVEL}")
 
 
-def load_from_socket(conn) -> bytes:
-    data = b''
-
+def main_loop(server_socket: socket, root_dns: str, hot_cache: Cache):
     while True:
-        new = connection.recv(1024)
-        data += new
+        try:
+            data, addr = server_socket.recvfrom(1024)
+            logging.info(f'{addr} connected')
 
-        if new is None:
-            break
+            hex_data = binascii.b2a_hex(data)
+            logging.info(f'read from {addr} : {hex_data}')
+            query_packet: DNSParser = DNSParser(hex_data)
+            std_dns_config = DNSConfig().from_parsed_packet(query_packet)
+            std_dns_config.QR = 1
 
-    return data
+            for query in query_packet.queries_list:
+                answer = hot_cache.get(query.qname, query.type_record)
+
+                if answer is None:
+                    answer_query = resolve_name(query.qname, query.type_record, query.class_record, root_dns)
+                    logging.info(f'{query.qname} : {query.type_record} was resolved from forwarder')
+
+                    for resolved_answer in answer_query.answers_list:
+                        rdata = to_creator(resolved_answer)
+                        hot_cache.push(resolved_answer.name, resolved_answer.type_record, rdata, resolved_answer.ttl)
+                        std_dns_config.ANSWERS.append(Answer(resolved_answer.name, resolved_answer.type_record, resolved_answer.class_record, resolved_answer.ttl, rdata))
+                else:
+                    logging.info(f'{query.qname}|{query.type_record} was get from cache')
+                    std_dns_config.ANSWERS.append(
+                        Answer(query.qname, query.type_record, query.class_record, answer[1], answer[0]))
+
+            answer_dns = DNSCreator(std_dns_config).to_bin()
+
+            if len(answer_dns) % 2:
+                answer_dns = '0' + answer_dns
+
+            server_socket.sendto(bytes.fromhex(answer_dns), addr)
+
+        except KeyboardInterrupt:
+            logging.info('Ctrl+C received, shutting down')
+            hot_cache.to_json(CACHE_FILE_SERIALIZE)
+            sys.exit(0)
+        except OSError:
+            logging.error("Network is unreachable")
+        except Exception as err:
+            logging.error(err)
+            continue
 
 
-def resolve_name_or_ip(name: str):
-    pass
-
-
-try:
-    socket = socket.socket(socket.AF_INET, TRANSPORT)
-    socket.bind(('', PORT))
-    socket.listen(10)
-    logging.info('Server is running, press ctrl+c to stop')
-    cache: Cache = Cache().from_json(CACHE_FILE_SERIALIZE)
-
-    while True:
-        connection, addr = socket.accept()
-        logging.info(f'{addr} connected')
-
-        loaded_data = load_from_socket(connection)
-        hex_data = binascii.b2a_hex(loaded_data)
-        logging.info(f'read from {addr} : {hex_data}')
-
-        parsed_packet: DNSPacketParser = DNSPacketParser(hex_data)
-
-        for query in parsed_packet.queries_list:
-            record = query.type_record
-            name_or_ip = query.qname
-            record_cached = cache.get(name_or_ip, record)
-
-
-
-
-
-except Exception as e:
-    logging.error(e)
+if __name__ == '__main__':
+    try:
+        with socket.socket(socket.AF_INET, TRANSPORT) as server:
+            cache: Cache = Cache()
+            cache.from_json(CACHE_FILE_SERIALIZE)
+            server.bind((IP_SERVER, PORT))
+            logging.info('Server is running, press ctrl+c to stop')
+            main_loop(server, ROOT_DNS, cache)
+    except Exception as error:
+        logging.error(error)

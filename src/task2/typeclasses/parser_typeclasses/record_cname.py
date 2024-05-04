@@ -1,4 +1,4 @@
-from utils import parse_names
+from utils.utils import parse_names
 
 
 class RecordTypeCNAME:

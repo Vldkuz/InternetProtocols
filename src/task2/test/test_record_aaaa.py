@@ -1,11 +1,11 @@
 import unittest
 
-from dns_packets.dns_packet_parser import DNSPacketParser
+from dns_packets.dns_packet_parser import DNSParser
 
 
 class TestRecordAAAA(unittest.TestCase):
     bytes_stream = b'09ed81800001000200000000076d6f7a696c6c610e636c6f7564666c6172652d646e7303636f6d00001c0001c00c001c00010000004800102a0698c1005200000000000000000004c00c001c00010000004800102803f800005300000000000000000004'
-    parsed_packet = DNSPacketParser(bytes_stream)
+    parsed_packet = DNSParser(bytes_stream)
 
     def test_name(self):
         current_name_list = list(map(lambda answer: answer.name, self.parsed_packet.answers_list))

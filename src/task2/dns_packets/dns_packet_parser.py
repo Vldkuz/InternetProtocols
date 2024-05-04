@@ -1,17 +1,16 @@
 """
 Класс для парсинга DNS пакета
 """
-
-from record_answer import Answer
-from parser_typeclasses.record_query import Query
-from utils import convert_to_read, convert_to_bin, START_ID, END_ID, START_END_QR, START_OPCODE, END_OPCODE, \
-    START_END_AA, START_END_TC, START_END_RD, START_END_RA, START_RESERVED_BITS, END_RESERVED_BITS, \
+from typeclasses.parser_typeclasses.record_answer import Answer
+from typeclasses.parser_typeclasses.record_query import Query
+from utils.utils import convert_to_bin, convert_to_read, START_ID, END_ID, START_END_QR, START_OPCODE, \
+    END_OPCODE, START_END_AA, START_END_TC, START_END_RD, START_END_RA, START_RESERVED_BITS, END_RESERVED_BITS, \
     START_RCODE, END_RCODE, START_QDCOUNT, END_QDCOUNT, START_ANCOUNT, END_ANCOUNT, START_NSCOUNT, END_NSCOUNT, \
-    START_ARCOUNT, END_ARCOUNT, HEADER_SIZE, parse_query, QNAME, TYPE_RECORD, CLASS_RECORD, SEEK
-from utils_answer import parse_answer
+    END_ARCOUNT, START_ARCOUNT, HEADER_SIZE, parse_query, QNAME, TYPE_RECORD, CLASS_RECORD, SEEK
+from utils.utils_answer import parse_answer
 
 
-class DNSPacketParser:
+class DNSParser:
     def __init__(self, bytes_stream: bytes):
         bytes_for_header = convert_to_bin(bytes_stream)
         self._id = convert_to_read((bytes_for_header[START_ID: END_ID]))  # ID запроса и ID ответа совпадают

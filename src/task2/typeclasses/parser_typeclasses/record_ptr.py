@@ -1,4 +1,5 @@
-from utils import parse_names
+from utils.utils import parse_names
+
 
 class RecordTypePTR:
     def __init__(self, bits_stream: str, start_ptr_seek: int):
