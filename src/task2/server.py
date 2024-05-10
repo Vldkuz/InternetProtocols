@@ -3,7 +3,7 @@ import logging
 import os
 import socket
 import sys
-from socket import SocketKind
+
 from dotenv import load_dotenv
 from cache import Cache
 from dns_packets.config_dns import DNSConfig
@@ -13,27 +13,26 @@ from typeclasses.creator_typeclasses.record_answer import Answer
 from utils.utils_dns_config import to_creator
 from utils.utils_server import resolve_name
 
-TRANSPORT_PROTO_MAPPER = {'UDP': socket.SOCK_DGRAM, 'TCP': socket.SOCK_STREAM}
-
 LOG_LEVEL_MAPPER = {'INFO': logging.INFO, 'DEBUG': logging.DEBUG, 'WARNING': logging.WARNING, 'ERROR': logging.ERROR,
                     'CRITICAL': logging.CRITICAL}
+
 load_dotenv()
 
-PORT = os.getenv('PORT') or 53
+# Здесь можем сконфигурировать сервер с помощью переменных окружения:
+# PORT - отвечает за порт работы сервера
+# LOG_LEVEL - отвечает за уровень логирования
+# CACHE_FILE - отвечает за имя файла для сериализации и десериализации кеша
+# IP_SERVER - отвечает за IP интерфейса, на котором будет поднят сервер
+# ROOT_DNS - отвечает за IP forward сервера, для разрешения днс запросов
 
-TRANSPORT: SocketKind = TRANSPORT_PROTO_MAPPER.get(os.getenv('TRANSPORT_PROTO')) or socket.SOCK_DGRAM
-
+PORT = int(os.getenv('PORT')) or 53
 LOG_LEVEL = os.getenv('LOG_LEVEL') or logging.INFO
-
 CACHE_FILE_SERIALIZE = os.getenv('CACHE_FILE') or 'cache.json'
-
 IP_SERVER = os.getenv('IP_SERVER') or '127.0.0.1'
-
 ROOT_DNS = os.getenv('ROOT_DNS') or '8.8.8.8'
 
 logging.basicConfig(level=LOG_LEVEL, filename='server.log', filemode='a')
-
-logging.info(f"Starting logging. PORT: {PORT}, TRANSPORT_PROTOCOL: {TRANSPORT}, LOG_LEVEL: {LOG_LEVEL}")
+logging.info(f"Starting logging. PORT: {PORT}, LOG_LEVEL: {LOG_LEVEL}")
 
 
 def main_loop(server_socket: socket, root_dns: str, hot_cache: Cache):
@@ -58,7 +57,9 @@ def main_loop(server_socket: socket, root_dns: str, hot_cache: Cache):
                     for resolved_answer in answer_query.answers_list:
                         rdata = to_creator(resolved_answer)
                         hot_cache.push(resolved_answer.name, resolved_answer.type_record, rdata, resolved_answer.ttl)
-                        std_dns_config.ANSWERS.append(Answer(resolved_answer.name, resolved_answer.type_record, resolved_answer.class_record, resolved_answer.ttl, rdata))
+                        std_dns_config.ANSWERS.append(
+                            Answer(resolved_answer.name, resolved_answer.type_record, resolved_answer.class_record,
+                                   resolved_answer.ttl, rdata))
                 else:
                     logging.info(f'{query.qname}|{query.type_record} was get from cache')
                     std_dns_config.ANSWERS.append(
@@ -84,7 +85,7 @@ def main_loop(server_socket: socket, root_dns: str, hot_cache: Cache):
 
 if __name__ == '__main__':
     try:
-        with socket.socket(socket.AF_INET, TRANSPORT) as server:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
             cache: Cache = Cache()
             cache.from_json(CACHE_FILE_SERIALIZE)
             server.bind((IP_SERVER, PORT))

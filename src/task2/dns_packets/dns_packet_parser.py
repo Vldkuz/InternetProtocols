@@ -1,6 +1,19 @@
 """
 Класс для парсинга DNS пакета
 """
+
+"""
+    Типы записей DNS:
+    A - домен -> IPv4 адрес - код 1 + +
+    AAAA - домен -> IPv6 адрес - код 28 + +
+    CNAME - домен -> поддомен - код 5 + +
+    MX - домен -> доменное имя почтового сервера - код 15 + +
+    TXT - домен -> Текстовая запись о домене - код 16 -
+    NS - домен -> днс серверы домена - код 2 + +
+    PTR - IP -> домен - код 12 + +
+    SOA - домен -> запись зоны - код 6 + +
+"""
+
 from typeclasses.parser_typeclasses.record_answer import Answer
 from typeclasses.parser_typeclasses.record_query import Query
 from utils.utils import convert_to_bin, convert_to_read, START_ID, END_ID, START_END_QR, START_OPCODE, \
