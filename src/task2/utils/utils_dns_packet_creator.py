@@ -27,13 +27,6 @@ NAME_SPLITTER = '.'
 TERMINATORS_NULL = '0' * 8
 
 
-def get_bin_section(name: str) -> str:
-    bin_name = ''
-    for char in name:
-        bin_name += bin(ord(char))[BIN_OFFSET:].zfill(CH_SIZE)
-    return bin_name
-
-
 def answer_to_bits(answers: list[Answer], names_minder: {}, init_seek: int) -> tuple[bytes, int]:
     ans_bits = b''
     seek = init_seek
@@ -42,7 +35,8 @@ def answer_to_bits(answers: list[Answer], names_minder: {}, init_seek: int) -> t
             encoded_name = convert_name_to_bits(ans.name, names_minder, seek)
             seek = encoded_name[1]
 
-            ans_bits += encoded_name[0] + struct.pack('!HH', MAPPER_INVERSE_TYPE_RECORD[ans.type_record], MAPPER_INVERSE_CLASS_RECORD[ans.class_record])
+            ans_bits += encoded_name[0] + struct.pack('!HH', MAPPER_INVERSE_TYPE_RECORD[ans.type_record],
+                                                      MAPPER_INVERSE_CLASS_RECORD[ans.class_record])
             seek += 32
 
             if ans.ttl > 2 ** 32 - 1:
