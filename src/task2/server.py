@@ -25,7 +25,7 @@ load_dotenv()
 # IP_SERVER - отвечает за IP интерфейса, на котором будет поднят сервер
 # ROOT_DNS - отвечает за IP forward сервера, для разрешения днс запросов
 
-PORT = int(os.getenv('PORT')) or 53
+PORT = os.getenv('PORT') or 53
 LOG_LEVEL = os.getenv('LOG_LEVEL') or logging.INFO
 CACHE_FILE_SERIALIZE = os.getenv('CACHE_FILE') or 'cache.json'
 IP_SERVER = os.getenv('IP_SERVER') or '127.0.0.1'
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
             cache: Cache = Cache()
             cache.from_json(CACHE_FILE_SERIALIZE)
-            server.bind((IP_SERVER, PORT))
+            server.bind((IP_SERVER, int(PORT)))
             logging.info('Server is running, press ctrl+c to stop')
             main_loop(server, ROOT_DNS, cache)
     except Exception as error:
