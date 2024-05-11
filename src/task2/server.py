@@ -67,17 +67,15 @@ def main_loop(server_socket: socket, root_dns: str, hot_cache: Cache):
 
             answer_dns = DNSCreator(std_dns_config).to_bin()
 
-            if len(answer_dns) % 2:
-                answer_dns = '0' + answer_dns
-
-            server_socket.sendto(bytes.fromhex(answer_dns), addr)
+            server_socket.sendto(answer_dns, addr)
 
         except KeyboardInterrupt:
             logging.info('Ctrl+C received, shutting down')
             hot_cache.to_json(CACHE_FILE_SERIALIZE)
             sys.exit(0)
-        except OSError:
+        except OSError as e:
             logging.error("Network is unreachable")
+            logging.error(e)
         except Exception as err:
             logging.error(err)
             continue

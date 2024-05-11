@@ -1,3 +1,5 @@
+import struct
+
 from utils.utils_dns_packet_creator import convert_name_to_bits
 from exceptions.creator_exception import CreatorException
 
@@ -20,7 +22,7 @@ class RecordTypeSoa:
         self.expire_limit = expire_limit
         self.minimum_ttl = minimum_ttl
 
-    def to_bin(self, names_minder: dict, start_soa_seek: int):
+    def to_bin(self, names_minder: dict, start_soa_seek: int) -> tuple[bytes, int]:
         if self.minimum_ttl and self.expire_limit and self.serial_number and self.refresh_interval \
                 and self.retry_interval:
             server = convert_name_to_bits(self.primary_server, names_minder, start_soa_seek)
@@ -33,14 +35,9 @@ class RecordTypeSoa:
 
             start_soa_seek += authority_encoded[1]
 
-            bits_serial_number = bin(self.serial_number)[2:].zfill(SERIAL_NUMBER_OFFSET)
-            bits_refresh_interval = bin(self.refresh_interval)[2:].zfill(REFRESH_INTERVAL_OFFSET)
-            bits_retry_interval = bin(self.retry_interval)[2:].zfill(REFRESH_INTERVAL_OFFSET)
-            bits_expire_limit_offset = bin(self.expire_limit)[2:].zfill(EXPIRE_LIMIT_OFFSET)
-            bits_minium_ttl = bin(self.minimum_ttl)[2:].zfill(MINIMUM_TTL_OFFSET)
+            bits_options = struct.pack('!IIIII', self.serial_number, self.refresh_interval, self.retry_interval, self.expire_limit, self.minimum_ttl)
 
-            return bits_primary_server + bits_responsible_authority + bits_serial_number + bits_refresh_interval \
-                + bits_retry_interval + bits_expire_limit_offset + bits_minium_ttl, start_soa_seek + len(bits_serial_number) + len(bits_refresh_interval) + len(bits_retry_interval) + len(bits_expire_limit_offset) + len(bits_minium_ttl)
+            return bits_primary_server + bits_responsible_authority + bits_options, start_soa_seek + 160
 
         raise CreatorException(f'Плохой soa:{self.retry_interval}, {self.refresh_interval},'
                                f'{self.primary_server}, {self.expire_limit}, {self.minimum_ttl}, '

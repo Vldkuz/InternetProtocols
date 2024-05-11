@@ -1,11 +1,13 @@
 """
 Класс для формирования днс пакета
 """
+import struct
+
 from dns_packets.config_dns import DNSConfig
 from exceptions.creator_exception import CreatorException
-from utils.utils import TYPE_RECORD_BITS_OFFSET, CLASS_RECORD_BITS_OFFSET
-from utils.utils_dns_packet_creator import MAX_ID, BIN_OFFSET, QR_AA_TC_RD_RA_VALUES, OP_VALUES, OP_CODE_SIZE, MAX_Z, Z_SIZE, \
-    RCODE_VALUES, RCODE_SIZE, QDCOUNT, ANCOUNT, NSCOUNT, ARCOUNT, HEADER_SIZE, convert_name_to_bits, \
+from utils.utils_dns_packet_creator import MAX_ID, BIN_OFFSET, QR_AA_TC_RD_RA_VALUES, OP_VALUES, OP_CODE_SIZE, MAX_Z, \
+    Z_SIZE, \
+    RCODE_VALUES, RCODE_SIZE, HEADER_SIZE, convert_name_to_bits, \
     MAPPER_INVERSE_TYPE_RECORD, MAPPER_INVERSE_CLASS_RECORD, answer_to_bits
 
 
@@ -14,7 +16,7 @@ class DNSCreator:
         self._config = config
 
     def to_bin(self):
-        bytes_packet = ''  # Здесь все в бинарку сложим и отпарсим потом hex
+        bytes_packet = b''  # Здесь все в бинарку сложим и отпарсим потом hex
 
         """
         Здесь нужно завести какой-то словарь для использования потом сжатых меток
@@ -26,7 +28,7 @@ class DNSCreator:
         if self._config.ID > MAX_ID:
             raise CreatorException(f"ID больше максимального допустимого id (65535): {self._config.ID}")
 
-        id_bits: str = bin(self._config.ID)[BIN_OFFSET:].zfill(16)
+        id_bits: bytes = struct.pack('!H', self._config.ID)
 
         bytes_packet += id_bits
 
@@ -34,74 +36,48 @@ class DNSCreator:
             raise CreatorException(
                 f'Поле не может быть однозначно идентифицировано как запрос или ответ (0, 1): {self._config.QR}')
 
-        qr_bits: str = str(self._config.QR)
-
-        bytes_packet += qr_bits
-
         if self._config.OP_CODE not in OP_VALUES:
             raise CreatorException(
                 f'Поле не может быть однозначно идентифицировано как код запроса (0, 1, 2): {self._config.OP_CODE}')
-
-        op_code_bits: str = bin(self._config.OP_CODE)[BIN_OFFSET:].zfill(OP_CODE_SIZE)
-
-        bytes_packet += op_code_bits
 
         if self._config.AA not in QR_AA_TC_RD_RA_VALUES:
             raise CreatorException(
                 f'Поле не может быть однозначно идентифицировано как код авторитета (0, 1): {self._config.AA}')
 
-        aa_bits: str = str(self._config.AA)
-
-        bytes_packet += aa_bits
-
         if self._config.TC not in QR_AA_TC_RD_RA_VALUES:
             raise CreatorException(
                 f'Поле не может быть однозначно идентифицировано как код обрезки пакета (0, 1): {self._config.TC}')
-
-        tc_bits: str = str(self._config.TC)
-
-        bytes_packet += tc_bits
 
         if self._config.RD not in QR_AA_TC_RD_RA_VALUES:
             raise CreatorException(
                 f'Поле не может быть однозначно идентифицировано как код желания рекурсии (0, 1): {self._config.RD}')
 
-        rd_bits: str = str(self._config.RD)
-
-        bytes_packet += rd_bits
-
         if self._config.RA not in QR_AA_TC_RD_RA_VALUES:
             raise CreatorException(
                 f'Поле не может быть однозначно идентифицировано как код возможности рекурсии (0, 1): {self._config.RA}')
-
-        ra_bits: str = str(self._config.RA)
-
-        bytes_packet += ra_bits
 
         if self._config.Z > MAX_Z:
             raise CreatorException(
                 f"Значение в поле не может быть больше 7 из-за размерности поля в 3 бита {self._config.Z}")
 
-        z_bits: str = bin(self._config.Z)[BIN_OFFSET:].zfill(Z_SIZE)
-
-        bytes_packet += z_bits
-
         if self._config.RCODE not in RCODE_VALUES:
             raise CreatorException(
                 f"Поле не может быть однозначно идентифицировано как статус выполнения запроса (0, 1, 2, 3, 4, 5) {self._config.RCODE}")
 
+        qr_bits: str = str(self._config.QR)
+        op_code_bits: str = bin(self._config.OP_CODE)[BIN_OFFSET:].zfill(OP_CODE_SIZE)
+        aa_bits: str = str(self._config.AA)
+        tc_bits: str = str(self._config.TC)
+        rd_bits: str = str(self._config.RD)
+        ra_bits: str = str(self._config.RA)
+        z_bits: str = bin(self._config.Z)[BIN_OFFSET:].zfill(Z_SIZE)
         rcode_bits: str = bin(self._config.RCODE)[BIN_OFFSET:].zfill(RCODE_SIZE)
+        flags = int(qr_bits + op_code_bits + aa_bits + tc_bits + rd_bits + ra_bits + z_bits + rcode_bits, 2)
 
-        bytes_packet += rcode_bits
+        bytes_packet += struct.pack('!H', flags)
+        bytes_packet += struct.pack('!HHHH', len(self._config.QUERIES), len(self._config.ANSWERS), len(self._config.AUTHORITY), len(self._config.ADDITIONAL))
 
-        qdcount_bits: str = bin(len(self._config.QUERIES))[BIN_OFFSET:].zfill(QDCOUNT)
-        ancount_bits: str = bin(len(self._config.ANSWERS))[BIN_OFFSET:].zfill(ANCOUNT)
-        nscount_bits: str = bin(len(self._config.AUTHORITY))[BIN_OFFSET:].zfill(NSCOUNT)
-        arcount_bits: str = bin(len(self._config.ADDITIONAL))[BIN_OFFSET:].zfill(ARCOUNT)
-
-        bytes_packet += qdcount_bits + ancount_bits + nscount_bits + arcount_bits
-
-        query_bits: str = ""
+        query_bits: bytes = b''
 
         seek = HEADER_SIZE
 
@@ -111,12 +87,8 @@ class DNSCreator:
             seek = encoded_qname[1]
             query_bits += encoded_qname[0]
 
-            type_record_bits = bin(MAPPER_INVERSE_TYPE_RECORD[record.type_record])[BIN_OFFSET:].zfill(
-                TYPE_RECORD_BITS_OFFSET)
-            class_record_bits = bin(MAPPER_INVERSE_CLASS_RECORD[record.class_record])[BIN_OFFSET:].zfill(
-                CLASS_RECORD_BITS_OFFSET)
-            query_bits += type_record_bits + class_record_bits
-            seek += len(type_record_bits) + len(class_record_bits)
+            query_bits += struct.pack('!HH', MAPPER_INVERSE_TYPE_RECORD[record.type_record], MAPPER_INVERSE_CLASS_RECORD[record.class_record])
+            seek += 32
 
         answer_bits, seek = answer_to_bits(self._config.ANSWERS, names_minder, seek)
         authority_bits, seek = answer_to_bits(self._config.AUTHORITY, names_minder, seek)
@@ -124,4 +96,4 @@ class DNSCreator:
 
         bytes_packet += query_bits + answer_bits + authority_bits + additional_bits
 
-        return hex(int(bytes_packet, 2))[2:]
+        return bytes_packet

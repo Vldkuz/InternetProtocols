@@ -6,7 +6,7 @@ class RecordTypeNS:
     def __init__(self, authority_name_server):
         self.authority_name_server = authority_name_server
 
-    def to_bin(self, names_minder: dict, start_ns_seek: int):
+    def to_bin(self, names_minder: dict, start_ns_seek: int) -> tuple[bytes, int]:
         if self.authority_name_server:
             encoded_name = convert_name_to_bits(self.authority_name_server, names_minder, start_ns_seek)
             seek = encoded_name[1]
