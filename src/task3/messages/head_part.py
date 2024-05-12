@@ -7,11 +7,11 @@ RE_RUSSIAN_LANGUAGE = re.compile("[а-яА-ЯёЁ]")
 
 
 class HeadPart:
-    def __init__(self, boundary: str, receivers: list[str], login: str, subject: Optional[str] = None) -> None:
+    def __init__(self, boundary: str, receivers: list[str], subject: Optional[str] = None) -> None:
         self._boundary = boundary
         self._receivers = receivers
         self._subject = self._normalize_subject(subject)
-        self._login = login
+        self._login = os.getenv('LOGIN')
 
         if not len(self._receivers):
             raise ValueError("No mail receivers found")

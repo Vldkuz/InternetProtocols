@@ -4,11 +4,14 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from src.task3.client import SMTPClient
-from src.task3.messages.message import MessageBuilder
+from smtp_client import SMTPClient
+from messages.message import MessageBuilder
 
 MAIL_DIR = 'mail'
 JSON_NAME = 'mail.json'
+CONFIGS_DIR = 'configs'
+
+load_dotenv(dotenv_path=os.path.join(CONFIGS_DIR, '.env'))
 
 LOGIN = os.getenv('LOGIN')
 PASSWD = os.getenv('PASSWORD')
@@ -16,7 +19,6 @@ HOST_ADDR = os.getenv('HOST_ADDR')
 PORT = os.getenv('PORT') or 465
 
 if __name__ == '__main__':
-    load_dotenv()
     path = os.path.join(MAIL_DIR, JSON_NAME)
 
     with open(path, "r") as file:
@@ -27,5 +29,5 @@ if __name__ == '__main__':
                    .add_receivers(*mail_data.get("receivers"))
                    .add_attachments(*mail_data.get("attachments")))
 
-        response = (SMTPClient(LOGIN, PASSWD, HOST_ADDR, int(PORT)).auth_client()
+        response = (SMTPClient().auth_client()
                     .send_message(message.build_message()))

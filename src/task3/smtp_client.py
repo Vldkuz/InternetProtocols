@@ -5,22 +5,25 @@ import ssl
 import base64
 import socket
 
-from src.task3.messages.message import Message
+from messages.message import Message
 
 
 class SMTPClient:
-    def __init__(self, login: str, passwd: str, host_addr: str, port: int) -> None:
+    def __init__(self) -> None:
         self._client = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM
         )
 
-        self._login = login
-        self._passwd = passwd
+        port = os.getenv("PORT") or 465
+
+        self._login = os.getenv('LOGIN')
+        self._passwd = os.getenv('PASSWORD')
         self._client = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2).wrap_socket(self._client)
-        self._client.connect((host_addr, port))
+        self._client.connect((os.getenv('HOST_ADDR'), int(port)))
         self._client.recv(1024)
 
     def auth_client(self) -> SMTPClient:
+
         self._send_request(f"EHLO {self._login}")
 
         base64login = base64.b64encode(self._login.encode())

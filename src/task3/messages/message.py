@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+import os
 from random import randint
 from typing import Any, Optional
 
-from head_part import HeadPart
-from body_part import BodyPart
-from attach_part import AttachPart
+from messages.head_part import HeadPart
+from messages.body_part import BodyPart
+from messages.attach_part import AttachPart
 
 
 class Message:
     def __init__(self, params: dict[str, Any]) -> None:
         self._boundary = self._generate_boundary()
-
+        self.login = os.getenv('LOGIN')
         self._head_part = self._create_head(params)
         self._body_part = self._create_body(params)
         self._attachment_part = self._create_attachments(params)

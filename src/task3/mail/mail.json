@@ -1,0 +1,14 @@
+{
+  "subject": "Тестовая тема",
+  "body": "Че там по картинкам ?",
+
+  "receivers": [
+    "V.Ruznetsov@yandex.ru"
+  ],
+
+  "attachments": [
+    "my_attachment.txt",
+    "file-sample_1MB.rtf",
+    "belka.jpeg"
+  ]
+}

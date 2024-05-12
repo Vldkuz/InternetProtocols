@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 
-EXTRA_POINT_REGEXP = re.compile("^\.+$")
+EXTRA_POINT_REGEXP = re.compile(r"^\.+$")
 
 
 class BodyPart:

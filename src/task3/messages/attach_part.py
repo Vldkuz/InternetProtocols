@@ -4,7 +4,7 @@ from typing import Optional
 
 import magic
 
-MAIL_DIR = 'messages'
+MAIL_DIR = 'mail'
 ATTACHMENTS_DIR = 'attachments'
 
 
